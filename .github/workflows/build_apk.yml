@@ -24,11 +24,12 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
 
       - name: Build Signed Release APK
-        run: |
-          cd android_app
-          gradle assembleRelease --stacktrace
+        working-directory: android_app
+        run: gradle assembleRelease --stacktrace
 
       - name: Upload Signed Release APK Artifact
         uses: actions/upload-artifact@v4
