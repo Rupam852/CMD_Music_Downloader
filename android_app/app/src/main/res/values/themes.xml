@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.CMDMusic" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#090B10</item>
+        <item name="android:navigationBarColor">#090B10</item>
+        <item name="android:windowBackground">#090B10</item>
+    </style>
+</resources>

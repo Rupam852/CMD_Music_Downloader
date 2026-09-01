@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">CMD Music</string>
+    <string name="cast_app_id">CC1AD845</string> <!-- Default Media Cast Receiver -->
+</resources>

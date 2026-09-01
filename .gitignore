@@ -25,8 +25,9 @@ temp/
 *.webm
 *.webp
 
-# IDE and OS files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
+# Gradle files & Android build outputs
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
