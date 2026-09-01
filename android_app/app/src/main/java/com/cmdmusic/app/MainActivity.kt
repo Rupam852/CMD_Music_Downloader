@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -105,6 +106,12 @@ class MainActivity : ComponentActivity() {
                         override fun onPlaybackStateChanged(playbackState: Int) {
                             durationMs = mediaController?.duration ?: 0L
                         }
+                        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                            val mediaId = mediaItem?.mediaId
+                            if (mediaId != null) {
+                                currentSong = songs.find { it.id == mediaId }
+                            }
+                        }
                     }
                     mediaController?.addListener(listener)
                     onDispose {
@@ -134,7 +141,13 @@ class MainActivity : ComponentActivity() {
                             onPlaylistSelect = { selectedPlaylistId = it },
                             onSongClick = { song ->
                                 currentSong = song
-                                playSong(song)
+                                playQueue(songs, song)
+                            },
+                            onPlayAllClick = { queue ->
+                                if (queue.isNotEmpty()) {
+                                    currentSong = queue.first()
+                                    playQueue(queue, queue.first())
+                                }
                             },
                             onDeleteSong = { song ->
                                 coroutineScope.launch {
@@ -271,9 +284,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun playSong(song: Song) {
-        val mediaItem = MediaItem.fromUri(song.localFilePath ?: song.streamUrl)
-        mediaController?.setMediaItem(mediaItem)
+    private fun playQueue(songList: List<Song>, startSong: Song) {
+        val mediaItems = songList.map { song ->
+            MediaItem.Builder()
+                .setMediaId(song.id)
+                .setUri(song.localFilePath ?: song.streamUrl)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(song.title)
+                        .setArtist(song.artist)
+                        .setAlbumTitle(song.album)
+                        .build()
+                )
+                .build()
+        }
+
+        val startIndex = songList.indexOfFirst { it.id == startSong.id }.coerceAtLeast(0)
+
+        mediaController?.setMediaItems(mediaItems, startIndex, 0L)
         mediaController?.prepare()
         mediaController?.play()
     }

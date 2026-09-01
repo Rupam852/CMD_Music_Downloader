@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -36,6 +37,7 @@ fun HomeScreen(
     selectedPlaylistId: String?,
     onPlaylistSelect: (String?) -> Unit,
     onSongClick: (Song) -> Unit,
+    onPlayAllClick: (List<Song>) -> Unit,
     onDeleteSong: (Song) -> Unit,
     onDeletePlaylist: (Playlist) -> Unit,
     onAddPlaylistClick: () -> Unit,
@@ -135,13 +137,15 @@ fun HomeScreen(
             songs
         }
 
+        val selectedPlaylist = playlists.find { it.id == selectedPlaylistId }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(bottom = 130.dp)
         ) {
-            // Playlists Section
+            // Section 1: Playlists Carousel
             item {
                 Row(
                     modifier = Modifier
@@ -152,11 +156,12 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "Playlists (${playlists.size})",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
                     if (selectedPlaylistId != null) {
                         TextButton(onClick = { onPlaylistSelect(null) }) {
-                            Text("Show All Songs", color = SapphirePrimary)
+                            Text("Show All (${songs.size})", color = SapphirePrimary)
                         }
                     }
                 }
@@ -165,7 +170,7 @@ fun HomeScreen(
                     GlassmorphicCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(horizontal = 16.dp),
                         onClick = onAddPlaylistClick
                     ) {
                         Row(
@@ -186,7 +191,7 @@ fun HomeScreen(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "Tap + to add YouTube or Spotify playlist",
+                                    text = "Tap + to paste YouTube or Spotify link",
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -217,20 +222,54 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
-            // Songs List Header
+            // Section 2: All Songs Header with Play All Button
             item {
-                Text(
-                    text = if (selectedPlaylistId != null) "Playlist Songs (${displayedSongs.size})" else "All Tracks (${displayedSongs.size})",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = if (selectedPlaylist != null) selectedPlaylist.name else "All Tracks (${displayedSongs.size})",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                        if (selectedPlaylist != null) {
+                            Text(
+                                text = "${displayedSongs.size} Tracks in this playlist",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+
+                    if (displayedSongs.isNotEmpty()) {
+                        Button(
+                            onClick = { onPlayAllClick(displayedSongs) },
+                            colors = ButtonDefaults.buttonColors(containerColor = SapphirePrimary),
+                            shape = CircleShape,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Play All", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
 
-            // Songs List
+            // Section 3: Song Items List
             if (displayedSongs.isEmpty()) {
                 item {
                     Text(
-                        text = "No songs in this view yet. Paste a link to add tracks!",
+                        text = "No songs found. Tap + to import your favourite playlist or songs!",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                     )
