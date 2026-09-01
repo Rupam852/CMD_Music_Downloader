@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CMD Music & Playlist Downloader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #070a13 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --accent-primary: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.3);
+      --text-main: #f8fafc;
+      --text-dim: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 540px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 40px rgba(139, 92, 246, 0.15);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      padding: 0.4rem 1rem;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #c084fc;
+      margin-bottom: 0.8rem;
+    }
+
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.4rem;
+    }
+
+    p.subtitle {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+    }
+
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .url-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      padding: 1rem 4.5rem 1rem 1rem;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+    }
+
+    .paste-btn {
+      position: absolute;
+      right: 8px;
+      background: rgba(139, 92, 246, 0.25);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #c084fc;
+      padding: 0.4rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .paste-btn:hover {
+      background: rgba(139, 92, 246, 0.4);
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .pill-btn {
+      flex: 1;
+      min-width: 45px;
+      text-align: center;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-dim);
+      padding: 0.55rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pill-btn.active {
+      background: var(--accent-gradient);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    .action-btn {
+      width: 100%;
+      background: var(--accent-gradient);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 1.1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px -5px rgba(139, 92, 246, 0.6);
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Progress Card */
+    .progress-card {
+      display: none;
+      margin-top: 1.5rem;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 1.25rem;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .progress-status {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .progress-pct {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--emerald);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #8b5cf6 0%, #10b981 100%);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    .download-ready-btn {
+      display: none;
+      margin-top: 1rem;
+      width: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      text-decoration: none;
+      text-align: center;
+      padding: 1rem;
+      border-radius: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 25px -5px var(--emerald-glow);
+      animation: bounce 0.6s infinite alternate;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-4px); }
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <div class="logo-badge">⚡ Ultra Fast & 320kbps High Quality</div>
+      <h1>Music Downloader</h1>
+      <p class="subtitle">YouTube & Spotify Playlists to ZIP Archive</p>
+    </div>
+
+    <form id="downloadForm" onsubmit="event.preventDefault(); startDownload();">
+      <div class="input-group">
+        <label>Playlist or Song Link</label>
+        <div class="url-input-wrapper">
+          <input type="text" id="urlInput" placeholder="Paste YouTube or Spotify URL here..." required />
+          <button type="button" class="paste-btn" onclick="pasteLink()">📋 Paste</button>
+        </div>
+      </div>
+
+      <div class="options-grid">
+        <div>
+          <label>Audio Bitrate</label>
+          <div class="pill-group" id="qualityGroup">
+            <div class="pill-btn active" data-value="320">320k</div>
+            <div class="pill-btn" data-value="256">256k</div>
+            <div class="pill-btn" data-value="192">192k</div>
+            <div class="pill-btn" data-value="128">128k</div>
+          </div>
+        </div>
+
+        <div>
+          <label>Format</label>
+          <div class="pill-group" id="formatGroup">
+            <div class="pill-btn active" data-value="mp3">MP3</div>
+            <div class="pill-btn" data-value="flac">FLAC</div>
+            <div class="pill-btn" data-value="wav">WAV</div>
+            <div class="pill-btn" data-value="m4a">M4A</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Packaging Mode</label>
+        <div class="pill-group" id="modeGroup">
+          <div class="pill-btn active" data-value="zip">📦 ZIP Archive (Auto-Clean)</div>
+          <div class="pill-btn" data-value="folder">📁 Raw Songs</div>
+        </div>
+      </div>
+
+      <button type="submit" class="action-btn" id="submitBtn">
+        <span>⬇️ Download High Quality Music</span>
+      </button>
+    </form>
+
+    <!-- Live Progress Card -->
+    <div class="progress-card" id="progressCard">
+      <div class="progress-header">
+        <span class="progress-status" id="statusMessage">Processing...</span>
+        <span class="progress-pct" id="statusPct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <a href="#" class="download-ready-btn" id="downloadFileBtn" download>
+        ✨ Download Ready (Click to Save)
+      </a>
+    </div>
+
+    <div class="footer">
+      Powered by yt-dlp & FFmpeg • Clean ID3 Tagging & Album Cover Art
+    </div>
+  </div>
+
+  <script>
+    // Handle pill selections
+    function setupPills(groupId) {
+      const container = document.getElementById(groupId);
+      const pills = container.querySelectorAll('.pill-btn');
+      pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          pills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+        });
+      });
+    }
+
+    setupPills('qualityGroup');
+    setupPills('formatGroup');
+    setupPills('modeGroup');
+
+    function getActiveValue(groupId) {
+      return document.getElementById(groupId).querySelector('.pill-btn.active').dataset.value;
+    }
+
+    async function pasteLink() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          document.getElementById('urlInput').value = text;
+        }
+      } catch (err) {
+        alert("Clipboard permission needed or paste manually!");
+      }
+    }
+
+    async function startDownload() {
+      const url = document.getElementById('urlInput').value.trim();
+      if (!url) return;
+
+      const quality = getActiveValue('qualityGroup');
+      const format = getActiveValue('formatGroup');
+      const mode = getActiveValue('modeGroup');
+
+      const submitBtn = document.getElementById('submitBtn');
+      const progressCard = document.getElementById('progressCard');
+      const statusMessage = document.getElementById('statusMessage');
+      const statusPct = document.getElementById('statusPct');
+      const progressFill = document.getElementById('progressFill');
+      const downloadFileBtn = document.getElementById('downloadFileBtn');
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>⏳ Starting Download Engine...</span>';
+      progressCard.style.display = 'block';
+      downloadFileBtn.style.display = 'none';
+      progressFill.style.width = '10%';
+      statusPct.innerText = '10%';
+      statusMessage.innerText = 'Connecting to audio stream...';
+
+      try {
+        const res = await fetch('/api/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, quality, format, mode })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Download request failed');
+
+        const taskId = data.task_id;
+        pollProgress(taskId);
+      } catch (err) {
+        statusMessage.innerText = '❌ Error: ' + err.message;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>⬇️ Download High Quality Music</span>';
+      }
+    }
+
+    function pollProgress(taskId) {
+      const statusMessage = document.getElementById('statusMessage');
+      const statusPct = document.getElementById('statusPct');
+      const progressFill = document.getElementById('progressFill');
+      const downloadFileBtn = document.getElementById('downloadFileBtn');
+      const submitBtn = document.getElementById('submitBtn');
+
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/progress/${taskId}`);
+          if (!res.ok) return;
+
+          const data = await res.json();
+          const pct = data.percentage || 0;
+          progressFill.style.width = pct + '%';
+          statusPct.innerText = pct + '%';
+          statusMessage.innerText = data.message || 'Processing...';
+
+          if (data.status === 'completed') {
+            clearInterval(interval);
+            downloadFileBtn.href = `/api/download-file/${taskId}`;
+            downloadFileBtn.style.display = 'block';
+            statusMessage.innerText = '🎉 ' + (data.title || 'Music') + ' ready!';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>⬇️ Download Another</span>';
+
+            // Auto-trigger download
+            setTimeout(() => {
+              downloadFileBtn.click();
+            }, 800);
+          } else if (data.status === 'error') {
+            clearInterval(interval);
+            statusMessage.innerText = '❌ ' + (data.error || 'Download failed.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>⬇️ Try Again</span>';
+          }
+        } catch (e) {
+          // ignore network glitch in poll
+        }
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
