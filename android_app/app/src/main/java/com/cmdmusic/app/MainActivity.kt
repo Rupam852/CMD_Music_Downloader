@@ -26,6 +26,7 @@ import com.cmdmusic.app.data.model.Playlist
 import com.cmdmusic.app.data.model.Song
 import com.cmdmusic.app.downloader.MusicFetcher
 import com.cmdmusic.app.service.MusicService
+import com.cmdmusic.app.ui.components.ImportProgressDialog
 import com.cmdmusic.app.ui.components.NowPlayingBar
 import com.cmdmusic.app.ui.screens.HomeScreen
 import com.cmdmusic.app.ui.screens.ImportPlaylistDialog
@@ -88,6 +89,12 @@ class MainActivity : ComponentActivity() {
                 var showImportDialog by remember { mutableStateOf(false) }
                 var currentPositionMs by remember { mutableStateOf(0L) }
                 var durationMs by remember { mutableStateOf(0L) }
+
+                // Live Import Progress Popup State
+                var isImporting by remember { mutableStateOf(false) }
+                var importCurrentTrack by remember { mutableStateOf(0) }
+                var importTotalTracks by remember { mutableStateOf(0) }
+                var importStatusMessage by remember { mutableStateOf("Connecting to music service...") }
 
                 // Playback state listener
                 DisposableEffect(mediaController) {
@@ -188,22 +195,45 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Import Playlist Dialog
+                        // Input Dialog to Enter URL
                         if (showImportDialog) {
                             ImportPlaylistDialog(
                                 onDismiss = { showImportDialog = false },
                                 onImport = { url, quality, format ->
-                                    Toast.makeText(this@MainActivity, "Fetching music from link...", Toast.LENGTH_SHORT).show()
+                                    showImportDialog = false
+                                    isImporting = true
+                                    importCurrentTrack = 0
+                                    importTotalTracks = 0
+                                    importStatusMessage = "Connecting to playlist..."
+
                                     coroutineScope.launch {
                                         try {
-                                            val (playlist, fetchedSongs) = MusicFetcher.resolveAndFetch(url, quality, format)
+                                            val (playlist, fetchedSongs) = MusicFetcher.resolveAndFetch(url, quality, format) { cur, tot, msg ->
+                                                importCurrentTrack = cur
+                                                importTotalTracks = tot
+                                                importStatusMessage = msg
+                                            }
+                                            
+                                            // Save complete playlist and all songs to Room DB
                                             repository.savePlaylist(playlist, fetchedSongs)
-                                            Toast.makeText(this@MainActivity, "Added '${playlist.name}' to Library!", Toast.LENGTH_LONG).show()
+                                            isImporting = false
+                                            selectedPlaylistId = playlist.id
+                                            Toast.makeText(this@MainActivity, "Added '${playlist.name}' (${fetchedSongs.size} tracks) to Library!", Toast.LENGTH_LONG).show()
                                         } catch (e: Exception) {
+                                            isImporting = false
                                             Toast.makeText(this@MainActivity, "Failed to import: ${e.message}", Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 }
+                            )
+                        }
+
+                        // Live Import Progress Popup Dialog (Shows 0% to 100% real-time progress)
+                        if (isImporting) {
+                            ImportProgressDialog(
+                                current = importCurrentTrack,
+                                total = importTotalTracks,
+                                statusMessage = importStatusMessage
                             )
                         }
                     }
