@@ -3,34 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CMD Music & Playlist Downloader</title>
+  <title>Music & Playlist Downloader • Material 3</title>
+  
+  <!-- Google Fonts: Roboto & Google Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+
   <style>
     :root {
-      --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #070a13 100%);
-      --card-bg: rgba(30, 41, 59, 0.7);
-      --card-border: rgba(255, 255, 255, 0.1);
-      --accent-primary: #8b5cf6;
-      --accent-gradient: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-      --emerald: #10b981;
-      --emerald-glow: rgba(16, 185, 129, 0.3);
-      --text-main: #f8fafc;
-      --text-dim: #94a3b8;
+      /* Material 3 Dark Palette (Black + Glass + Blue) */
+      --md-sys-color-background: #090b10;
+      --md-sys-color-surface: rgba(18, 24, 38, 0.65);
+      --md-sys-color-surface-container: rgba(26, 34, 52, 0.55);
+      --md-sys-color-surface-container-high: rgba(36, 48, 74, 0.6);
+      
+      --md-sys-color-primary: #3b82f6;
+      --md-sys-color-primary-container: #1e3a8a;
+      --md-sys-color-on-primary: #ffffff;
+      --md-sys-color-on-primary-container: #dbeafe;
+      
+      --md-sys-color-outline: rgba(255, 255, 255, 0.08);
+      --md-sys-color-outline-variant: rgba(255, 255, 255, 0.04);
+      
+      --md-sys-color-on-surface: #f1f5f9;
+      --md-sys-color-on-surface-variant: #94a3b8;
+      
+      --md-sys-shape-corner-extra-large: 28px;
+      --md-sys-shape-corner-large: 20px;
+      --md-sys-shape-corner-medium: 14px;
+      --md-sys-shape-corner-full: 9999px;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Roboto', sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      background: var(--bg-gradient);
-      color: var(--text-main);
+      background-color: var(--md-sys-color-background);
+      background-image: 
+        radial-gradient(at 15% 15%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+        radial-gradient(at 85% 85%, rgba(30, 58, 138, 0.1) 0px, transparent 50%);
+      color: var(--md-sys-color-on-surface);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -39,347 +58,394 @@
       padding: 1.5rem 1rem;
     }
 
-    .container {
+    /* Material 3 Glass Card Container */
+    .m3-container {
       width: 100%;
-      max-width: 540px;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
-      border-radius: 24px;
-      padding: 2rem;
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 40px rgba(139, 92, 246, 0.15);
-      animation: fadeIn 0.6s ease-out;
+      max-width: 500px;
+      background: var(--md-sys-color-surface);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      padding: 2.25rem 2rem;
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+      animation: m3Enter 0.4s cubic-bezier(0.2, 0.0, 0, 1.0);
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes m3Enter {
+      from { opacity: 0; transform: scale(0.97) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
-    .header {
+    /* M3 Header Section */
+    .m3-header {
       text-align: center;
       margin-bottom: 2rem;
     }
 
-    .logo-badge {
-      display: inline-flex;
+    .m3-icon-avatar {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 1rem;
+      border-radius: var(--md-sys-shape-corner-large);
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      display: flex;
       align-items: center;
-      gap: 0.5rem;
-      background: rgba(139, 92, 246, 0.15);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      padding: 0.4rem 1rem;
-      border-radius: 50px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #c084fc;
-      margin-bottom: 0.8rem;
+      justify-content: center;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .m3-icon-avatar span {
+      font-size: 28px;
     }
 
     h1 {
-      font-size: 1.85rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.4rem;
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+      letter-spacing: -0.2px;
+      margin-bottom: 0.35rem;
     }
 
-    p.subtitle {
-      font-size: 0.95rem;
-      color: var(--text-dim);
+    p.m3-subtitle {
+      font-size: 0.9rem;
+      color: var(--md-sys-color-on-surface-variant);
+      font-weight: 400;
     }
 
-    .input-group {
+    /* Form Fields */
+    .m3-form-group {
       margin-bottom: 1.5rem;
     }
 
-    label {
+    .m3-label {
       display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #cbd5e1;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant);
       margin-bottom: 0.5rem;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
     }
 
-    .url-input-wrapper {
+    /* M3 Outlined Text Input with Action Icon */
+    .m3-input-wrapper {
       position: relative;
       display: flex;
       align-items: center;
     }
 
-    input[type="text"] {
+    .m3-input-wrapper input[type="text"] {
       width: 100%;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 14px;
-      padding: 1rem 4.5rem 1rem 1rem;
-      color: #fff;
-      font-size: 1rem;
+      background: var(--md-sys-color-surface-container);
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--md-sys-shape-corner-medium);
+      padding: 0.95rem 5.5rem 0.95rem 1rem;
+      color: var(--md-sys-color-on-surface);
+      font-size: 0.95rem;
       outline: none;
-      transition: all 0.2s ease;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    input[type="text"]:focus {
-      border-color: var(--accent-primary);
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+    .m3-input-wrapper input[type="text"]:focus {
+      border-color: var(--md-sys-color-primary);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
     }
 
-    .paste-btn {
+    .m3-input-wrapper input[type="text"]::placeholder {
+      color: rgba(148, 163, 184, 0.5);
+    }
+
+    .m3-paste-btn {
       position: absolute;
       right: 8px;
-      background: rgba(139, 92, 246, 0.25);
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      color: #c084fc;
-      padding: 0.4rem 0.75rem;
-      border-radius: 10px;
+      background: var(--md-sys-color-primary-container);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: var(--md-sys-color-on-primary-container);
+      padding: 0.38rem 0.75rem;
+      border-radius: 8px;
       font-size: 0.8rem;
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: background 0.2s, transform 0.1s;
     }
 
-    .paste-btn:hover {
-      background: rgba(139, 92, 246, 0.4);
+    .m3-paste-btn:hover {
+      background: rgba(59, 130, 246, 0.35);
     }
 
-    .options-grid {
+    .m3-paste-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* M3 Segmented / Tonal Chips */
+    .m3-chips-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
 
-    .pill-group {
+    .m3-segmented-control {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
+      background: var(--md-sys-color-surface-container);
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--md-sys-shape-corner-medium);
+      padding: 3px;
+      gap: 3px;
     }
 
-    .pill-btn {
+    .m3-segment-item {
       flex: 1;
-      min-width: 45px;
       text-align: center;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-dim);
-      padding: 0.55rem 0.5rem;
+      padding: 0.55rem 0.3rem;
       border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant);
       cursor: pointer;
-      transition: all 0.2s;
+      user-select: none;
+      transition: all 0.2s ease;
     }
 
-    .pill-btn.active {
-      background: var(--accent-gradient);
-      color: #fff;
-      border-color: transparent;
-      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    .m3-segment-item.active {
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
 
-    .action-btn {
+    /* Primary Action Button (Filled M3 Button) */
+    .m3-filled-btn {
       width: 100%;
-      background: var(--accent-gradient);
-      color: #fff;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
       border: none;
-      border-radius: 16px;
-      padding: 1.1rem;
-      font-size: 1.05rem;
-      font-weight: 700;
+      border-radius: var(--md-sys-shape-corner-large);
+      padding: 1.05rem;
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.6rem;
-      box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
-      transition: all 0.2s ease;
+      gap: 0.5rem;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
     }
 
-    .action-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 15px 30px -5px rgba(139, 92, 246, 0.6);
+    .m3-filled-btn:hover {
+      background: #2563eb;
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
     }
 
-    .action-btn:active {
-      transform: translateY(0);
+    .m3-filled-btn:active {
+      transform: scale(0.98);
     }
 
-    .action-btn:disabled {
-      opacity: 0.6;
+    .m3-filled-btn:disabled {
+      opacity: 0.55;
       cursor: not-allowed;
       transform: none;
+      box-shadow: none;
     }
 
-    /* Progress Card */
-    .progress-card {
+    /* M3 Progress Card */
+    .m3-progress-card {
       display: none;
       margin-top: 1.5rem;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 18px;
+      background: var(--md-sys-color-surface-container);
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--md-sys-shape-corner-large);
       padding: 1.25rem;
-      animation: fadeIn 0.4s ease;
+      animation: m3Enter 0.3s ease;
     }
 
-    .progress-header {
+    .m3-progress-info {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 0.75rem;
     }
 
-    .progress-status {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #e2e8f0;
+    .m3-progress-status {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
     }
 
-    .progress-pct {
-      font-size: 0.9rem;
+    .m3-progress-pct {
+      font-size: 0.88rem;
       font-weight: 700;
-      color: var(--emerald);
+      color: var(--md-sys-color-primary);
     }
 
-    .progress-track {
+    /* Linear M3 Progress Indicator */
+    .m3-linear-progress {
       width: 100%;
-      height: 10px;
+      height: 6px;
       background: rgba(255, 255, 255, 0.08);
-      border-radius: 10px;
+      border-radius: 4px;
       overflow: hidden;
-      margin-bottom: 0.75rem;
     }
 
-    .progress-fill {
+    .m3-linear-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #8b5cf6 0%, #10b981 100%);
-      border-radius: 10px;
-      transition: width 0.3s ease;
+      background: var(--md-sys-color-primary);
+      border-radius: 4px;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .download-ready-btn {
+    /* Download Complete Button */
+    .m3-download-ready-btn {
       display: none;
       margin-top: 1rem;
       width: 100%;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #fff;
+      background: #10b981;
+      color: #ffffff;
       text-decoration: none;
       text-align: center;
-      padding: 1rem;
-      border-radius: 14px;
-      font-weight: 700;
-      box-shadow: 0 10px 25px -5px var(--emerald-glow);
-      animation: bounce 0.6s infinite alternate;
+      padding: 0.95rem;
+      border-radius: var(--md-sys-shape-corner-large);
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      transition: background 0.2s, transform 0.1s;
     }
 
-    @keyframes bounce {
-      from { transform: translateY(0); }
-      to { transform: translateY(-4px); }
+    .m3-download-ready-btn:hover {
+      background: #059669;
     }
 
-    .footer {
+    .m3-footer {
       text-align: center;
-      margin-top: 1.5rem;
+      margin-top: 1.75rem;
       font-size: 0.8rem;
-      color: var(--text-dim);
+      color: var(--md-sys-color-on-surface-variant);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div class="header">
-      <div class="logo-badge">⚡ Ultra Fast & 320kbps High Quality</div>
+  <div class="m3-container">
+    <div class="m3-header">
+      <div class="m3-icon-avatar">
+        <span class="material-symbols-rounded">graphic_eq</span>
+      </div>
       <h1>Music Downloader</h1>
-      <p class="subtitle">YouTube & Spotify Playlists to ZIP Archive</p>
+      <p class="m3-subtitle">Material 3 • YouTube & Spotify to High Quality Audio</p>
     </div>
 
     <form id="downloadForm" onsubmit="event.preventDefault(); startDownload();">
-      <div class="input-group">
-        <label>Playlist or Song Link</label>
-        <div class="url-input-wrapper">
-          <input type="text" id="urlInput" placeholder="Paste YouTube or Spotify URL here..." required />
-          <button type="button" class="paste-btn" onclick="pasteLink()">📋 Paste</button>
+      
+      <!-- Link Input -->
+      <div class="m3-form-group">
+        <label class="m3-label">Playlist or Song URL</label>
+        <div class="m3-input-wrapper">
+          <input type="text" id="urlInput" placeholder="https://open.spotify.com/... or youtube.com/..." required />
+          <button type="button" class="m3-paste-btn" onclick="pasteLink()">
+            <span class="material-symbols-rounded" style="font-size: 16px;">content_paste</span>
+            Paste
+          </button>
         </div>
       </div>
 
-      <div class="options-grid">
+      <!-- Options Grid: Bitrate & Format -->
+      <div class="m3-chips-grid">
         <div>
-          <label>Audio Bitrate</label>
-          <div class="pill-group" id="qualityGroup">
-            <div class="pill-btn active" data-value="320">320k</div>
-            <div class="pill-btn" data-value="256">256k</div>
-            <div class="pill-btn" data-value="192">192k</div>
-            <div class="pill-btn" data-value="128">128k</div>
+          <label class="m3-label">Bitrate</label>
+          <div class="m3-segmented-control" id="qualityGroup">
+            <div class="m3-segment-item active" data-value="320">320k</div>
+            <div class="m3-segment-item" data-value="256">256k</div>
+            <div class="m3-segment-item" data-value="192">192k</div>
+            <div class="m3-segment-item" data-value="128">128k</div>
           </div>
         </div>
 
         <div>
-          <label>Format</label>
-          <div class="pill-group" id="formatGroup">
-            <div class="pill-btn active" data-value="mp3">MP3</div>
-            <div class="pill-btn" data-value="flac">FLAC</div>
-            <div class="pill-btn" data-value="wav">WAV</div>
-            <div class="pill-btn" data-value="m4a">M4A</div>
+          <label class="m3-label">Format</label>
+          <div class="m3-segmented-control" id="formatGroup">
+            <div class="m3-segment-item active" data-value="mp3">MP3</div>
+            <div class="m3-segment-item" data-value="flac">FLAC</div>
+            <div class="m3-segment-item" data-value="wav">WAV</div>
+            <div class="m3-segment-item" data-value="m4a">M4A</div>
           </div>
         </div>
       </div>
 
-      <div class="input-group">
-        <label>Packaging Mode</label>
-        <div class="pill-group" id="modeGroup">
-          <div class="pill-btn active" data-value="zip">📦 ZIP Archive (Auto-Clean)</div>
-          <div class="pill-btn" data-value="folder">📁 Raw Songs</div>
+      <!-- Packaging Mode -->
+      <div class="m3-form-group">
+        <label class="m3-label">Storage Output</label>
+        <div class="m3-segmented-control" id="modeGroup">
+          <div class="m3-segment-item active" data-value="zip">📦 ZIP Archive (Auto-Clean)</div>
+          <div class="m3-segment-item" data-value="folder">📁 Raw Songs Only</div>
         </div>
       </div>
 
-      <button type="submit" class="action-btn" id="submitBtn">
-        <span>⬇️ Download High Quality Music</span>
+      <!-- Action Button -->
+      <button type="submit" class="m3-filled-btn" id="submitBtn">
+        <span class="material-symbols-rounded">download</span>
+        <span>Download Audio</span>
       </button>
     </form>
 
-    <!-- Live Progress Card -->
-    <div class="progress-card" id="progressCard">
-      <div class="progress-header">
-        <span class="progress-status" id="statusMessage">Processing...</span>
-        <span class="progress-pct" id="statusPct">0%</span>
+    <!-- Progress Card -->
+    <div class="m3-progress-card" id="progressCard">
+      <div class="m3-progress-info">
+        <span class="m3-progress-status" id="statusMessage">
+          <span class="material-symbols-rounded" style="font-size: 18px;">sync</span>
+          Processing stream...
+        </span>
+        <span class="m3-progress-pct" id="statusPct">0%</span>
       </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill"></div>
+      <div class="m3-linear-progress">
+        <div class="m3-linear-fill" id="progressFill"></div>
       </div>
-      <a href="#" class="download-ready-btn" id="downloadFileBtn" download>
-        ✨ Download Ready (Click to Save)
+      <a href="#" class="m3-download-ready-btn" id="downloadFileBtn" download>
+        <span class="material-symbols-rounded">check_circle</span>
+        <span>Download Ready (Click to Save)</span>
       </a>
     </div>
 
-    <div class="footer">
-      Powered by yt-dlp & FFmpeg • Clean ID3 Tagging & Album Cover Art
+    <div class="m3-footer">
+      <span class="material-symbols-rounded" style="font-size: 16px;">verified</span>
+      yt-dlp Engine • Studio 320kbps MP3 / FLAC
     </div>
   </div>
 
   <script>
-    // Handle pill selections
-    function setupPills(groupId) {
-      const container = document.getElementById(groupId);
-      const pills = container.querySelectorAll('.pill-btn');
-      pills.forEach(pill => {
-        pill.addEventListener('click', () => {
-          pills.forEach(p => p.classList.remove('active'));
-          pill.classList.add('active');
+    function setupSegmented(groupId) {
+      const group = document.getElementById(groupId);
+      const items = group.querySelectorAll('.m3-segment-item');
+      items.forEach(item => {
+        item.addEventListener('click', () => {
+          items.forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
         });
       });
     }
 
-    setupPills('qualityGroup');
-    setupPills('formatGroup');
-    setupPills('modeGroup');
+    setupSegmented('qualityGroup');
+    setupSegmented('formatGroup');
+    setupSegmented('modeGroup');
 
-    function getActiveValue(groupId) {
-      return document.getElementById(groupId).querySelector('.pill-btn.active').dataset.value;
+    function getSegmentValue(groupId) {
+      return document.getElementById(groupId).querySelector('.m3-segment-item.active').dataset.value;
     }
 
     async function pasteLink() {
@@ -389,7 +455,7 @@
           document.getElementById('urlInput').value = text;
         }
       } catch (err) {
-        alert("Clipboard permission needed or paste manually!");
+        alert("Please paste the link manually into the input box.");
       }
     }
 
@@ -397,9 +463,9 @@
       const url = document.getElementById('urlInput').value.trim();
       if (!url) return;
 
-      const quality = getActiveValue('qualityGroup');
-      const format = getActiveValue('formatGroup');
-      const mode = getActiveValue('modeGroup');
+      const quality = getSegmentValue('qualityGroup');
+      const format = getSegmentValue('formatGroup');
+      const mode = getSegmentValue('modeGroup');
 
       const submitBtn = document.getElementById('submitBtn');
       const progressCard = document.getElementById('progressCard');
@@ -409,12 +475,13 @@
       const downloadFileBtn = document.getElementById('downloadFileBtn');
 
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span>⏳ Starting Download Engine...</span>';
+      submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_top</span><span>Starting Download...</span>';
+      
       progressCard.style.display = 'block';
       downloadFileBtn.style.display = 'none';
       progressFill.style.width = '10%';
       statusPct.innerText = '10%';
-      statusMessage.innerText = 'Connecting to audio stream...';
+      statusMessage.innerHTML = '<span class="material-symbols-rounded" style="font-size: 18px;">cloud_sync</span> Connecting to audio stream...';
 
       try {
         const res = await fetch('/api/download', {
@@ -424,14 +491,13 @@
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Download request failed');
+        if (!res.ok) throw new Error(data.detail || 'Download failed to start');
 
-        const taskId = data.task_id;
-        pollProgress(taskId);
+        pollProgress(data.task_id);
       } catch (err) {
-        statusMessage.innerText = '❌ Error: ' + err.message;
+        statusMessage.innerHTML = '<span class="material-symbols-rounded" style="font-size: 18px; color: #ef4444;">error</span> ' + err.message;
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<span>⬇️ Download High Quality Music</span>';
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">download</span><span>Download Audio</span>';
       }
     }
 
@@ -451,28 +517,31 @@
           const pct = data.percentage || 0;
           progressFill.style.width = pct + '%';
           statusPct.innerText = pct + '%';
-          statusMessage.innerText = data.message || 'Processing...';
+          
+          if (data.message) {
+            statusMessage.innerHTML = '<span class="material-symbols-rounded" style="font-size: 18px;">sync</span> ' + data.message;
+          }
 
           if (data.status === 'completed') {
             clearInterval(interval);
             downloadFileBtn.href = `/api/download-file/${taskId}`;
-            downloadFileBtn.style.display = 'block';
-            statusMessage.innerText = '🎉 ' + (data.title || 'Music') + ' ready!';
+            downloadFileBtn.style.display = 'flex';
+            statusMessage.innerHTML = '<span class="material-symbols-rounded" style="font-size: 18px; color: #10b981;">task_alt</span> ' + (data.title || 'Music') + ' ready!';
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<span>⬇️ Download Another</span>';
+            submitBtn.innerHTML = '<span class="material-symbols-rounded">download</span><span>Download Another</span>';
 
-            // Auto-trigger download
+            // Trigger auto-download
             setTimeout(() => {
               downloadFileBtn.click();
-            }, 800);
+            }, 600);
           } else if (data.status === 'error') {
             clearInterval(interval);
-            statusMessage.innerText = '❌ ' + (data.error || 'Download failed.');
+            statusMessage.innerHTML = '<span class="material-symbols-rounded" style="font-size: 18px; color: #ef4444;">error</span> ' + (data.error || 'Failed.');
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<span>⬇️ Try Again</span>';
+            submitBtn.innerHTML = '<span class="material-symbols-rounded">refresh</span><span>Try Again</span>';
           }
         } catch (e) {
-          // ignore network glitch in poll
+          // ignore network glitch
         }
       }, 1500);
     }
