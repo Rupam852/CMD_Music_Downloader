@@ -1,4 +1,4 @@
-name: Build & Release Signed Android APK
+name: "Build and Release Signed Android APK"
 
 on:
   push:
@@ -22,15 +22,13 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Grant Execute Permission for Gradlew
-        run: |
-          cd android_app
-          chmod +x gradlew || true
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Build Signed Release APK with Gradle
+      - name: Build Signed Release APK
         run: |
           cd android_app
-          gradle assembleRelease --stacktrace || ./gradlew assembleRelease --stacktrace
+          gradle assembleRelease --stacktrace
 
       - name: Upload Signed Release APK Artifact
         uses: actions/upload-artifact@v4
