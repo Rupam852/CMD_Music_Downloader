@@ -1,17 +1,21 @@
 package com.cmdmusic.app
 
+import android.Manifest
 import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -35,6 +39,13 @@ class MainActivity : ComponentActivity() {
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
 
+    // Android 13+ Runtime Permissions Launcher
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        // Permissions handled
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -48,10 +59,13 @@ class MainActivity : ComponentActivity() {
         // 2. Edge-to-Edge display
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        // 3. Android 13+ (API 33+) Runtime Permissions Request
+        checkAndRequestAndroid13Permissions()
+
         val app = application as MusicApplication
         val repository = app.repository
 
-        // 3. Connect to Media3 Service
+        // 4. Connect to Media3 Service
         val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
         controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
         controllerFuture?.addListener({
@@ -139,7 +153,6 @@ class MainActivity : ComponentActivity() {
                                 onDismiss = { showImportDialog = false },
                                 onImport = { url, quality, format ->
                                     coroutineScope.launch {
-                                        // Save imported playlist entity
                                         val isSpotify = url.contains("spotify", ignoreCase = true)
                                         val playlist = Playlist(
                                             id = System.currentTimeMillis().toString(),
@@ -154,6 +167,23 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun checkAndRequestAndroid13Permissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
+            val permissionsToRequest = mutableListOf<String>()
+            
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_MEDIA_AUDIO)
+            }
+
+            if (permissionsToRequest.isNotEmpty()) {
+                requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
             }
         }
     }

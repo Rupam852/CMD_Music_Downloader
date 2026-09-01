@@ -43,7 +43,7 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "CMD Music",
+                        text = "Aura Music",
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold
                     )
