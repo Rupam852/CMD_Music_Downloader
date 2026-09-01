@@ -20,14 +20,21 @@ class MusicRepository(
 
     suspend fun savePlaylist(playlist: Playlist, songs: List<Song>) {
         playlistDao.insertPlaylist(playlist)
-        songDao.insertSongs(songs)
+        if (songs.isNotEmpty()) {
+            songDao.insertSongs(songs)
+        }
     }
 
     suspend fun updateSong(song: Song) {
         songDao.insertSong(song)
     }
 
+    suspend fun deleteSong(song: Song) {
+        songDao.deleteSong(song)
+    }
+
     suspend fun deletePlaylist(playlist: Playlist) {
         playlistDao.deletePlaylist(playlist)
+        songDao.deleteSongsByPlaylist(playlist.id)
     }
 }

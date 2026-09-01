@@ -24,6 +24,9 @@ interface SongDao {
 
     @Delete
     suspend fun deleteSong(song: Song)
+
+    @Query("DELETE FROM songs WHERE playlistId = :playlistId")
+    suspend fun deleteSongsByPlaylist(playlistId: String)
 }
 
 @Dao

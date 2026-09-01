@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +24,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.cmdmusic.app.data.model.Playlist
 import com.cmdmusic.app.data.model.Song
+import com.cmdmusic.app.downloader.MusicFetcher
 import com.cmdmusic.app.service.MusicService
 import com.cmdmusic.app.ui.components.NowPlayingBar
 import com.cmdmusic.app.ui.screens.HomeScreen
@@ -32,6 +34,7 @@ import com.cmdmusic.app.ui.theme.AmoledBackground
 import com.cmdmusic.app.ui.theme.CMDMusicTheme
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -43,7 +46,7 @@ class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
-        // Permissions handled
+        // Handled
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,7 +62,7 @@ class MainActivity : ComponentActivity() {
         // 2. Edge-to-Edge display
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // 3. Android 13+ (API 33+) Runtime Permissions Request
+        // 3. Android 13+ Runtime Permissions Request
         checkAndRequestAndroid13Permissions()
 
         val app = application as MusicApplication
@@ -78,6 +81,7 @@ class MainActivity : ComponentActivity() {
                 val playlists by repository.allPlaylists.collectAsState(initial = emptyList())
                 val songs by repository.allSongs.collectAsState(initial = emptyList())
 
+                var selectedPlaylistId by remember { mutableStateOf<String?>(null) }
                 var currentSong by remember { mutableStateOf<Song?>(null) }
                 var isPlaying by remember { mutableStateOf(false) }
                 var isNowPlayingExpanded by remember { mutableStateOf(false) }
@@ -85,7 +89,7 @@ class MainActivity : ComponentActivity() {
                 var currentPositionMs by remember { mutableStateOf(0L) }
                 var durationMs by remember { mutableStateOf(0L) }
 
-                // Playback listener
+                // Playback state listener
                 DisposableEffect(mediaController) {
                     val listener = object : Player.Listener {
                         override fun onIsPlayingChanged(playing: Boolean) {
@@ -101,6 +105,15 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                // Live Seekbar / Position Poller ticker
+                LaunchedEffect(isPlaying) {
+                    while (isPlaying) {
+                        currentPositionMs = mediaController?.currentPosition ?: 0L
+                        durationMs = mediaController?.duration ?: 0L
+                        delay(500)
+                    }
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = AmoledBackground
@@ -110,22 +123,45 @@ class MainActivity : ComponentActivity() {
                             playlists = playlists,
                             songs = songs,
                             currentSong = currentSong,
+                            selectedPlaylistId = selectedPlaylistId,
+                            onPlaylistSelect = { selectedPlaylistId = it },
                             onSongClick = { song ->
                                 currentSong = song
                                 playSong(song)
                             },
+                            onDeleteSong = { song ->
+                                coroutineScope.launch {
+                                    repository.deleteSong(song)
+                                    Toast.makeText(this@MainActivity, "Deleted '${song.title}'", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onDeletePlaylist = { playlist ->
+                                coroutineScope.launch {
+                                    repository.deletePlaylist(playlist)
+                                    if (selectedPlaylistId == playlist.id) {
+                                        selectedPlaylistId = null
+                                    }
+                                    Toast.makeText(this@MainActivity, "Deleted playlist '${playlist.name}'", Toast.LENGTH_SHORT).show()
+                                }
+                            },
                             onAddPlaylistClick = { showImportDialog = true },
-                            onCastClick = { /* Trigger Google Cast dialog */ }
+                            onCastClick = { 
+                                Toast.makeText(this@MainActivity, "Searching for Google Cast devices...", Toast.LENGTH_SHORT).show()
+                            }
                         )
 
-                        // Floating Mini-Player Bar
+                        // Floating Mini-Player Bar (Bottom of screen)
                         if (currentSong != null && !isNowPlayingExpanded) {
                             NowPlayingBar(
                                 currentSong = currentSong,
                                 isPlaying = isPlaying,
+                                currentPositionMs = currentPositionMs,
+                                durationMs = durationMs,
                                 onPlayPauseClick = { togglePlayPause() },
                                 onNextClick = { mediaController?.seekToNext() },
-                                onCastClick = { /* Cast */ },
+                                onCastClick = { 
+                                    Toast.makeText(this@MainActivity, "Searching for Google Cast devices...", Toast.LENGTH_SHORT).show()
+                                },
                                 onClick = { isNowPlayingExpanded = true },
                                 modifier = Modifier.align(Alignment.BottomCenter)
                             )
@@ -141,8 +177,13 @@ class MainActivity : ComponentActivity() {
                                 onPlayPauseClick = { togglePlayPause() },
                                 onPreviousClick = { mediaController?.seekToPrevious() },
                                 onNextClick = { mediaController?.seekToNext() },
-                                onSeek = { pos -> mediaController?.seekTo(pos) },
-                                onCastClick = { /* Cast */ },
+                                onSeek = { pos -> 
+                                    currentPositionMs = pos
+                                    mediaController?.seekTo(pos) 
+                                },
+                                onCastClick = { 
+                                    Toast.makeText(this@MainActivity, "Searching for Google Cast devices...", Toast.LENGTH_SHORT).show()
+                                },
                                 onCloseClick = { isNowPlayingExpanded = false }
                             )
                         }
@@ -152,15 +193,15 @@ class MainActivity : ComponentActivity() {
                             ImportPlaylistDialog(
                                 onDismiss = { showImportDialog = false },
                                 onImport = { url, quality, format ->
+                                    Toast.makeText(this@MainActivity, "Fetching music from link...", Toast.LENGTH_SHORT).show()
                                     coroutineScope.launch {
-                                        val isSpotify = url.contains("spotify", ignoreCase = true)
-                                        val playlist = Playlist(
-                                            id = System.currentTimeMillis().toString(),
-                                            name = if (isSpotify) "Spotify Collection" else "YouTube Playlist",
-                                            sourcePlatform = if (isSpotify) "SPOTIFY" else "YOUTUBE",
-                                            originalUrl = url
-                                        )
-                                        repository.savePlaylist(playlist, emptyList())
+                                        try {
+                                            val (playlist, fetchedSongs) = MusicFetcher.resolveAndFetch(url, quality, format)
+                                            repository.savePlaylist(playlist, fetchedSongs)
+                                            Toast.makeText(this@MainActivity, "Added '${playlist.name}' to Library!", Toast.LENGTH_LONG).show()
+                                        } catch (e: Exception) {
+                                            Toast.makeText(this@MainActivity, "Failed to import: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
                             )
@@ -172,7 +213,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkAndRequestAndroid13Permissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permissionsToRequest = mutableListOf<String>()
             
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

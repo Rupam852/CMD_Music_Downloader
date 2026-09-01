@@ -1,5 +1,6 @@
 package com.cmdmusic.app.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -11,7 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -23,6 +26,7 @@ import com.cmdmusic.app.data.model.Song
 import com.cmdmusic.app.ui.theme.AmoledBackground
 import com.cmdmusic.app.ui.theme.SapphirePrimary
 import com.cmdmusic.app.ui.theme.SurfaceCardElevated
+import com.cmdmusic.app.ui.theme.SurfaceDark
 
 @Composable
 fun NowPlayingScreen(
@@ -39,10 +43,32 @@ fun NowPlayingScreen(
 ) {
     if (song == null) return
 
+    var isShuffle by remember { mutableStateOf(false) }
+    var isRepeat by remember { mutableStateOf(false) }
+
+    // Vinyl Rotation Animation when song is actively playing
+    val infiniteTransition = rememberInfiniteTransition(label = "VinylRotation")
+    val rotationAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(12000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "Rotation"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AmoledBackground)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        SurfaceDark,
+                        AmoledBackground
+                    )
+                )
+            )
             .padding(24.dp)
     ) {
         Column(
@@ -61,17 +87,25 @@ fun NowPlayingScreen(
                         imageVector = Icons.Rounded.KeyboardArrowDown,
                         contentDescription = "Collapse",
                         tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(34.dp)
                     )
                 }
 
-                Text(
-                    text = "NOW PLAYING",
-                    style = MaterialTheme.typography.labelSmall,
-                    letterSpacing = 1.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "PLAYING FROM PLAYLIST",
+                        style = MaterialTheme.typography.labelSmall,
+                        letterSpacing = 1.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = song.album,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+                }
 
                 IconButton(onClick = onCastClick) {
                     Icon(
@@ -85,13 +119,14 @@ fun NowPlayingScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Big Album Artwork with Shadow & Glass Border
+            // Big Vinyl Record / Album Cover with Shadow & Rotation
             Box(
                 modifier = Modifier
-                    .size(300.dp)
-                    .shadow(30.dp, RoundedCornerShape(28.dp), spotColor = SapphirePrimary)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(SurfaceCardElevated),
+                    .size(290.dp)
+                    .shadow(36.dp, CircleShape, spotColor = SapphirePrimary)
+                    .clip(CircleShape)
+                    .background(SurfaceCardElevated)
+                    .rotate(if (isPlaying) rotationAngle else 0f),
                 contentAlignment = Alignment.Center
             ) {
                 if (!song.artworkUrl.isNullOrEmpty()) {
@@ -109,9 +144,17 @@ fun NowPlayingScreen(
                         modifier = Modifier.size(80.dp)
                     )
                 }
+
+                // Vinyl Center Hole
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(AmoledBackground)
+                )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Title & Artist Info
             Column(
@@ -137,7 +180,7 @@ fun NowPlayingScreen(
 
             // Seekbar
             Column(modifier = Modifier.fillMaxWidth()) {
-                val progress = if (durationMs > 0) currentPositionMs.toFloat() / durationMs.toFloat() else 0f
+                val progress = if (durationMs > 0) (currentPositionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f) else 0f
                 Slider(
                     value = progress,
                     onValueChange = { onSeek((it * durationMs).toLong()) },
@@ -157,12 +200,22 @@ fun NowPlayingScreen(
                 }
             }
 
-            // Playback Controls (Previous, Play/Pause, Next)
+            // Playback Controls (Shuffle, Prev, Play/Pause, Next, Repeat)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Shuffle
+                IconButton(onClick = { isShuffle = !isShuffle }) {
+                    Icon(
+                        imageVector = Icons.Rounded.Shuffle,
+                        contentDescription = "Shuffle",
+                        tint = if (isShuffle) SapphirePrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Previous
                 IconButton(onClick = onPreviousClick, modifier = Modifier.size(48.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.SkipPrevious,
@@ -178,15 +231,16 @@ fun NowPlayingScreen(
                     containerColor = SapphirePrimary,
                     contentColor = Color.White,
                     shape = CircleShape,
-                    modifier = Modifier.size(68.dp)
+                    modifier = Modifier.size(70.dp)
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         contentDescription = "Play/Pause",
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(38.dp)
                     )
                 }
 
+                // Next
                 IconButton(onClick = onNextClick, modifier = Modifier.size(48.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.SkipNext,
@@ -195,9 +249,18 @@ fun NowPlayingScreen(
                         modifier = Modifier.size(36.dp)
                     )
                 }
+
+                // Repeat
+                IconButton(onClick = { isRepeat = !isRepeat }) {
+                    Icon(
+                        imageVector = Icons.Rounded.Repeat,
+                        contentDescription = "Repeat",
+                        tint = if (isRepeat) SapphirePrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
         }
     }
 }
