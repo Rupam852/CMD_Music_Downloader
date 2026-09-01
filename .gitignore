@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local environment & virtualenvs
+.venv/
+venv/
+env/
+ENV/
+
+# Large binary files & tools (auto-downloaded by script)
+bin/
+*.zip
+*.tar.gz
+*.exe
+
+# Downloaded music & media output folders
+downloads/
+temp/
+*.mp3
+*.flac
+*.wav
+*.m4a
+*.webm
+*.webp
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
