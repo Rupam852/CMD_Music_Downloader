@@ -170,16 +170,17 @@ def interactive_mode():
 
     # Step 2: Quality Selection
     console.print("\n[bold cyan]───────────────── 🎚️ Step 2: Audio Bitrate ─────────────────[/bold cyan]")
-    console.print("  [bold yellow]1.[/bold yellow] [bold white]320 kbps[/bold white] [dim](Best Quality - Crystal Clear)[/dim]")
-    console.print("  [bold yellow]2.[/bold yellow] [bold white]256 kbps[/bold white] [dim](High Quality - Balanced)[/dim]")
+    console.print("  [bold yellow]1.[/bold yellow] [bold white]320 kbps[/bold white] [dim](Best Quality - Crystal Clear - Recommended)[/dim]")
+    console.print("  [bold yellow]2.[/bold yellow] [bold white]256 kbps[/bold white] [dim](High Quality)[/dim]")
     console.print("  [bold yellow]3.[/bold yellow] [bold white]192 kbps[/bold white] [dim](Standard Quality)[/dim]")
     console.print("  [bold yellow]4.[/bold yellow] [bold white]128 kbps[/bold white] [dim](Compact Size)[/dim]")
     
     q_map = {"1": "320", "2": "256", "3": "192", "4": "128"}
     q_choice = Prompt.ask(
-        "[bold cyan]Select Quality [1/2/3/4][/bold cyan]",
+        "[bold cyan]Select Quality (1-4)[/bold cyan]",
         choices=["1", "2", "3", "4"],
-        default="1"
+        default="1",
+        show_choices=False
     )
     quality_choice = q_map[q_choice]
 
@@ -192,22 +193,24 @@ def interactive_mode():
     
     f_map = {"1": "mp3", "2": "flac", "3": "wav", "4": "m4a"}
     f_choice = Prompt.ask(
-        "[bold cyan]Select Format [1/2/3/4][/bold cyan]",
+        "[bold cyan]Select Format (1-4)[/bold cyan]",
         choices=["1", "2", "3", "4"],
-        default="1"
+        default="1",
+        show_choices=False
     )
     format_choice = f_map[f_choice]
 
     # Step 4: Storage Option Selection
     console.print("\n[bold cyan]───────────────── 📦 Step 4: Storage Mode ─────────────────[/bold cyan]")
-    console.print("  [bold yellow]1.[/bold yellow] [bold white]Only ZIP File[/bold white] [dim](Recommended - packs into .zip & auto-cleans raw files to save disk space)[/dim]")
-    console.print("  [bold yellow]2.[/bold yellow] [bold white]Only Uncompressed Folder[/bold white] [dim](Direct audio files inside normal folder)[/dim]")
-    console.print("  [bold yellow]3.[/bold yellow] [bold white]Both (ZIP + Folder)[/bold white] [dim](Keep .zip file AND uncompressed songs folder)[/dim]")
+    console.print("  [bold yellow]1.[/bold yellow] [bold white]Only ZIP File[/bold white] [dim](Packs into .zip & auto-cleans raw files - Recommended)[/dim]")
+    console.print("  [bold yellow]2.[/bold yellow] [bold white]Only Uncompressed Folder[/bold white] [dim](Direct audio files inside folder)[/dim]")
+    console.print("  [bold yellow]3.[/bold yellow] [bold white]Both (ZIP + Folder)[/bold white] [dim](Keep .zip file AND songs folder)[/dim]")
 
     storage_choice = Prompt.ask(
-        "[bold cyan]Select Option [1/2/3][/bold cyan]",
+        "[bold cyan]Select Storage Mode (1-3)[/bold cyan]",
         choices=["1", "2", "3"],
-        default="1"
+        default="1",
+        show_choices=False
     )
 
     if storage_choice == "1":
@@ -223,24 +226,25 @@ def interactive_mode():
     # Step 5: Save Location Selection
     console.print("\n[bold cyan]───────────────── 📁 Step 5: Destination Folder ─────────────────[/bold cyan]")
     console.print(f"  [bold yellow]1.[/bold yellow] [bold white]Default Downloads Folder[/bold white] [dim]({DOWNLOADS_DIR})[/dim]")
-    console.print("  [bold yellow]2.[/bold yellow] [bold white]Browse Window[/bold white] [dim](Open graphical folder selector popup)[/dim]")
-    console.print("  [bold yellow]3.[/bold yellow] [bold white]Custom Path[/bold white] [dim](Type your own folder path)[/dim]")
+    console.print("  [bold yellow]2.[/bold yellow] [bold white]Custom Path[/bold white] [dim](Type your own folder path)[/dim]")
+    console.print("  [bold yellow]3.[/bold yellow] [bold white]Browse Window[/bold white] [dim](Open Windows folder picker popup)[/dim]")
 
     dest_choice = Prompt.ask(
-        "[bold cyan]Select Destination [1/2/3][/bold cyan]",
+        "[bold cyan]Select Destination (1-3)[/bold cyan]",
         choices=["1", "2", "3"],
-        default="1"
+        default="1",
+        show_choices=False
     )
 
     if dest_choice == "1":
         chosen_dir = DOWNLOADS_DIR
     elif dest_choice == "2":
+        custom_path = Prompt.ask("[bold yellow]Enter Custom Folder Path[/bold yellow]").strip()
+        chosen_dir = Path(custom_path) if custom_path else DOWNLOADS_DIR
+    else: # "3"
         console.print("[cyan]Opening folder picker window...[/cyan]")
         gui_folder = pick_folder_gui()
         chosen_dir = Path(gui_folder) if gui_folder else DOWNLOADS_DIR
-    else: # "3"
-        custom_path = Prompt.ask("[bold yellow]Enter Custom Folder Path[/bold yellow]").strip()
-        chosen_dir = Path(custom_path) if custom_path else DOWNLOADS_DIR
 
     # Step 6: Post-Download Action
     console.print("\n[bold cyan]───────────────── 🚀 Step 6: Completion Action ─────────────────[/bold cyan]")
