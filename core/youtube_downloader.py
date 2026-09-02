@@ -28,8 +28,11 @@ if sys.platform == "win32":
 # Universal player clients to bypass YouTube bot detection & datacenter IP blocks (Cloud Shell / VPS)
 YOUTUBE_EXTRACTOR_ARGS = {
     'youtube': {
-        'player_client': ['android', 'ios', 'web_embedded', 'tv'],
+        'player_client': ['ios', 'android', 'web_embedded', 'tv_embedded'],
         'player_skip': ['webpage', 'configs'],
+    },
+    'youtubetab': {
+        'skip': ['webpage'],
     }
 }
 
@@ -60,6 +63,7 @@ def download_youtube(
         'skip_download': True,
         'quiet': True,
         'no_warnings': True,
+        'nocheckcertificate': True,
         'extractor_args': YOUTUBE_EXTRACTOR_ARGS,
     }
     
@@ -67,8 +71,14 @@ def download_youtube(
         try:
             info = ydl.extract_info(url, download=False)
         except Exception as e:
-            console.print(f"[bold red]❌ Failed to fetch info from YouTube: {e}[/bold red]")
-            raise e
+            # Fallback if first attempt failed
+            try:
+                extract_opts['extractor_args'] = {'youtube': {'player_client': ['android', 'web']}}
+                with yt_dlp.YoutubeDL(extract_opts) as ydl_fb:
+                    info = ydl_fb.extract_info(url, download=False)
+            except Exception as e2:
+                console.print(f"[bold red]❌ Failed to fetch info from YouTube: {e2}[/bold red]")
+                raise e2
 
     is_playlist = 'entries' in info and info['entries'] is not None
     title = info.get('title') or "YouTube_Music"
@@ -154,6 +164,7 @@ def download_youtube(
                 'outtmpl': str(target_dir / f"{safe_name}.%(ext)s"),
                 'ffmpeg_location': ffmpeg_dir or ffmpeg_path,
                 'writethumbnail': True,
+                'nocheckcertificate': True,
                 'extractor_args': YOUTUBE_EXTRACTOR_ARGS,
                 'postprocessors': [
                     {
