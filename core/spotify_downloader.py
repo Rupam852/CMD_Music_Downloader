@@ -7,11 +7,19 @@ from pathlib import Path
 import requests
 import yt_dlp
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, DownloadColumn, TransferSpeedColumn, TimeRemainingColumn
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    DownloadColumn,
+    TransferSpeedColumn,
+    TimeRemainingColumn,
+    TaskProgressColumn
+)
 from core.config import DOWNLOADS_DIR, DEFAULT_AUDIO_FORMAT, DEFAULT_BITRATE
 from core.ffmpeg_helper import ensure_ffmpeg
 from core.tagger import embed_metadata
-from core.progress import ClassicBoxBarColumn
+from core.progress import ClassicBoxBarColumn, SongCountColumn
 
 # Ensure UTF-8 output encoding
 if sys.platform == "win32":
@@ -22,7 +30,7 @@ if sys.platform == "win32":
         pass
 
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     'Accept-Language': 'en-US,en;q=0.9',
 }
 
@@ -44,7 +52,7 @@ def parse_spotify_url(url: str) -> tuple[str, str] | tuple[None, None]:
 
 def fetch_spotify_metadata(url: str, console: Console = None) -> tuple[str, list[dict]]:
     """
-    Extracts full track list and metadata from Spotify using embed page and official Web API token.
+    Extracts accurate track list and metadata from Spotify using embed page and oEmbed.
     Returns (collection_title, list_of_track_dicts).
     """
     entity_type, entity_id = parse_spotify_url(url)
@@ -56,9 +64,8 @@ def fetch_spotify_metadata(url: str, console: Console = None) -> tuple[str, list
     if res.status_code != 200:
         raise ValueError(f"Could not reach Spotify embed page (HTTP {res.status_code}).")
 
-    tracks = []
+    raw_tracks = []
     collection_title = "Spotify_Music"
-    token = None
 
     match = re.search(r'<script[^>]+id=["\']__NEXT_DATA__["\'][^>]*>(.*?)</script>', res.text)
     if match:
@@ -66,8 +73,6 @@ def fetch_spotify_metadata(url: str, console: Console = None) -> tuple[str, list
             next_data = json.loads(match.group(1))
             state_data = next_data.get('props', {}).get('pageProps', {}).get('state', {}).get('data', {})
             entity = state_data.get('entity', {})
-            settings = state_data.get('settings', {})
-            token = settings.get('session', {}).get('accessToken')
             
             collection_title = entity.get('name') or entity.get('title') or collection_title
 
@@ -82,130 +87,64 @@ def fetch_spotify_metadata(url: str, console: Console = None) -> tuple[str, list
 
             if entity_type == 'track':
                 title = entity.get('title') or entity.get('name', 'Track')
-                artist = entity.get('subtitle') or ", ".join([a.get('name', '') for a in entity.get('artists', [])])
-                tracks.append({
-                    'title': title,
-                    'artist': artist,
-                    'album': collection_title,
+                artist = entity.get('subtitle') or ", ".join([a.get('name', '') for a in entity.get('artists', []) if a.get('name')])
+                raw_tracks.append({
+                    'title': title.strip(),
+                    'artist': artist.strip(),
+                    'album': collection_title.strip(),
                     'year': '',
                     'cover_url': cover_url,
-                    'track_number': 1,
                 })
             else:
                 track_list = entity.get('trackList', [])
-                for idx, tr in enumerate(track_list, 1):
-                    tracks.append({
-                        'title': tr.get('title', 'Unknown Title'),
-                        'artist': tr.get('subtitle', 'Unknown Artist'),
-                        'album': collection_title,
-                        'year': '',
-                        'cover_url': cover_url,
-                        'track_number': idx,
-                    })
-        except Exception:
-            pass
-
-    if token:
-        try:
-            api_headers = {'Authorization': f'Bearer {token}'}
-            if entity_type == 'playlist':
-                api_url = f"https://api.spotify.com/v1/playlists/{entity_id}"
-                api_res = requests.get(api_url, headers=api_headers, timeout=10)
-                if api_res.status_code == 200:
-                    pdata = api_res.json()
-                    collection_title = pdata.get('name', collection_title)
-                    images = pdata.get('images', [])
-                    playlist_cover = images[0]['url'] if images else ""
-
-                    api_tracks = []
-                    track_items = pdata.get('tracks', {}).get('items', [])
-                    for i, item in enumerate(track_items, 1):
-                        tr = item.get('track')
-                        if tr and tr.get('name'):
-                            artist_name = ", ".join([a['name'] for a in tr.get('artists', [])])
-                            album_name = tr.get('album', {}).get('name', collection_title)
-                            year = tr.get('album', {}).get('release_date', '')[:4]
-                            tr_imgs = tr.get('album', {}).get('images', [])
-                            tr_cover = tr_imgs[0]['url'] if tr_imgs else playlist_cover
-                            api_tracks.append({
-                                'title': tr.get('name'),
-                                'artist': artist_name,
-                                'album': album_name,
-                                'year': year,
-                                'cover_url': tr_cover,
-                                'track_number': i,
-                            })
-                    if api_tracks:
-                        tracks = api_tracks
-            elif entity_type == 'album':
-                api_url = f"https://api.spotify.com/v1/albums/{entity_id}"
-                api_res = requests.get(api_url, headers=api_headers, timeout=10)
-                if api_res.status_code == 200:
-                    adata = api_res.json()
-                    collection_title = adata.get('name', collection_title)
-                    album_artists = ", ".join([a['name'] for a in adata.get('artists', [])])
-                    year = adata.get('release_date', '')[:4]
-                    images = adata.get('images', [])
-                    album_cover = images[0]['url'] if images else ""
-
-                    api_tracks = []
-                    for i, tr in enumerate(adata.get('tracks', {}).get('items', []), 1):
-                        artist_name = ", ".join([a['name'] for a in tr.get('artists', [])]) or album_artists
-                        api_tracks.append({
-                            'title': tr.get('name'),
-                            'artist': artist_name,
-                            'album': collection_title,
-                            'year': year,
-                            'cover_url': album_cover,
-                            'track_number': i,
+                for tr in track_list:
+                    t_title = tr.get('title', '').strip()
+                    t_artist = tr.get('subtitle', '').strip()
+                    if t_title:
+                        raw_tracks.append({
+                            'title': t_title,
+                            'artist': t_artist,
+                            'album': collection_title.strip(),
+                            'year': '',
+                            'cover_url': cover_url,
                         })
-                    if api_tracks:
-                        tracks = api_tracks
-            elif entity_type == 'track':
-                api_url = f"https://api.spotify.com/v1/tracks/{entity_id}"
-                api_res = requests.get(api_url, headers=api_headers, timeout=10)
-                if api_res.status_code == 200:
-                    tdata = api_res.json()
-                    artist_name = ", ".join([a['name'] for a in tdata.get('artists', [])])
-                    album_name = tdata.get('album', {}).get('name', '')
-                    year = tdata.get('album', {}).get('release_date', '')[:4]
-                    images = tdata.get('album', {}).get('images', [])
-                    cover_url = images[0]['url'] if images else ""
-                    tracks = [{
-                        'title': tdata.get('name'),
-                        'artist': artist_name,
-                        'album': album_name,
-                        'year': year,
-                        'cover_url': cover_url,
-                        'track_number': 1,
-                    }]
-                    collection_title = f"{artist_name} - {tdata.get('name')}"
         except Exception:
             pass
 
-    if not tracks:
+    # Fallback via oEmbed if empty
+    if not raw_tracks:
         try:
             oembed_url = f"https://open.spotify.com/oembed?url={urllib.parse.quote(url)}"
             oembed_res = requests.get(oembed_url, headers=HEADERS, timeout=10)
             if oembed_res.status_code == 200:
                 odata = oembed_res.json()
-                title = odata.get('title', 'Spotify Track')
-                tracks.append({
+                title = odata.get('title', 'Spotify Track').strip()
+                raw_tracks.append({
                     'title': title,
                     'artist': '',
                     'album': 'Spotify Music',
                     'year': '',
                     'cover_url': odata.get('thumbnail_url', ''),
-                    'track_number': 1,
                 })
                 collection_title = title
         except Exception:
             pass
 
-    if not tracks:
-        raise ValueError("Could not extract tracks from Spotify link. Please check that the link is accessible.")
+    if not raw_tracks:
+        raise ValueError("Could not extract tracks from Spotify link. Please check that the link is public and accessible.")
 
-    return sanitize_filename(collection_title), tracks
+    # Deduplicate tracks while preserving exact playlist order
+    tracks = []
+    seen = set()
+    for tr in raw_tracks:
+        key = (tr['title'].lower(), tr['artist'].lower())
+        if key not in seen:
+            seen.add(key)
+            tr['track_number'] = len(tracks) + 1
+            tracks.append(tr)
+
+    clean_collection_title = sanitize_filename(collection_title) or "Spotify_Playlist"
+    return clean_collection_title, tracks
 
 def download_spotify(
     url: str,
@@ -215,7 +154,7 @@ def download_spotify(
     console: Console = None
 ) -> tuple[Path, str]:
     """
-    Downloads Spotify tracks with classic box progress bar: [██████░░░░] 0% to 100%.
+    Downloads Spotify tracks with individual per-song progress bars and an overall playlist progress bar.
     """
     if console is None:
         console = Console()
@@ -225,19 +164,20 @@ def download_spotify(
 
     console.print("\n[bold cyan]🔍 Fetching Spotify playlist metadata...[/bold cyan]")
     collection_title, tracks = fetch_spotify_metadata(url, console)
+    total_tracks = len(tracks)
 
     base_output = Path(output_dir) if output_dir else DOWNLOADS_DIR
     target_dir = base_output / collection_title
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    console.print(f"[bold green]🎵 Target: {collection_title} ({len(tracks)} songs)[/bold green]")
+    console.print(f"[bold green]🎵 Target: {collection_title} ({total_tracks} Songs Total)[/bold green]")
     console.print(f"[bold cyan]📁 Destination: {target_dir}[/bold cyan]\n")
 
     progress = Progress(
         SpinnerColumn(),
-        TextColumn("[bold yellow]{task.fields[title]}[/bold yellow]"),
+        TextColumn("[bold cyan]{task.description}[/bold cyan]"),
         ClassicBoxBarColumn(bar_width=25),
-        TextColumn("[bold green]{task.percentage:>3.0f}%[/bold green]"),
+        TaskProgressColumn(),
         TextColumn("•"),
         DownloadColumn(),
         TextColumn("•"),
@@ -248,11 +188,11 @@ def download_spotify(
     )
 
     with progress:
-        download_task = progress.add_task(
-            "download",
-            total=100,
-            completed=0,
-            title="Starting Spotify download..."
+        # 1. Overall Playlist Progress Bar
+        overall_task = progress.add_task(
+            f"📦 Overall Playlist [{total_tracks} Songs]",
+            total=total_tracks,
+            completed=0
         )
 
         for i, track in enumerate(tracks, 1):
@@ -265,31 +205,35 @@ def download_spotify(
 
             safe_name = sanitize_filename(song_name)
             output_file = target_dir / f"{safe_name}.{audio_format}"
-            short_name = (song_name[:25] + "..") if len(song_name) > 25 else song_name
-
-            progress.update(
-                download_task,
-                total=100,
-                completed=0,
-                title=f"[{i}/{len(tracks)}] Searching & Downloading: {short_name}"
-            )
+            short_name = (song_name[:28] + "..") if len(song_name) > 28 else song_name
 
             if output_file.exists():
-                console.print(f"[dim green]⏩ [{i}/{len(tracks)}] Already exists: {safe_name}[/dim green]")
+                progress.advance(overall_task, 1)
+                console.print(f"[dim green]⏩ [{i}/{total_tracks}] Already exists: {safe_name}[/dim green]")
                 continue
+
+            # 2. Individual Per-Song Separate Progress Bar
+            song_task = progress.add_task(
+                f"🎵 [{i}/{total_tracks}] {short_name}",
+                total=100,
+                completed=0
+            )
 
             def spotify_hook(d):
                 if d.get('status') == 'downloading':
                     total_bytes = d.get('total_bytes') or d.get('total_bytes_estimate') or 1
                     downloaded = d.get('downloaded_bytes') or 0
                     progress.update(
-                        download_task,
+                        song_task,
                         total=total_bytes,
                         completed=downloaded,
-                        title=f"[{i}/{len(tracks)}] {short_name}"
+                        description=f"🎵 [{i}/{total_tracks}] {short_name}"
                     )
                 elif d.get('status') == 'finished':
-                    progress.update(download_task, title=f"🔄 Processing: {short_name}")
+                    progress.update(
+                        song_task,
+                        description=f"🔄 [{i}/{total_tracks}] Converting & Tagging: {short_name}"
+                    )
 
             track_opts = {
                 'format': 'bestaudio/best',
@@ -320,14 +264,19 @@ def download_spotify(
                         album=track['album'],
                         cover_url=track['cover_url'],
                         track_number=i,
-                        total_tracks=len(tracks),
+                        total_tracks=total_tracks,
                         year=track['year']
                     )
-                    console.print(f"[bold green]✅ [{i}/{len(tracks)}] Saved: {safe_name}[/bold green]")
+                    console.print(f"[bold green]✅ [{i}/{total_tracks}] Saved: {safe_name}[/bold green]")
+                else:
+                    console.print(f"[yellow]⚠️ [{i}/{total_tracks}] Conversion completed: {safe_name}[/yellow]")
             except Exception as e:
-                console.print(f"[red]⚠️ Error downloading {song_name}: {e}[/red]")
+                console.print(f"[red]❌ [{i}/{total_tracks}] Error downloading {song_name}: {e}[/red]")
+            finally:
+                progress.remove_task(song_task)
+                progress.advance(overall_task, 1)
 
-        progress.update(download_task, completed=100, total=100, title="[bold green]✅ Spotify Download Completed![/bold green]")
+        progress.update(overall_task, completed=total_tracks, description="[bold green]📦 All Spotify Songs Completed![/bold green]")
 
-    console.print(f"\n[bold green]✅ All Spotify songs successfully saved to:[/bold green] [yellow]{target_dir}[/yellow]")
+    console.print(f"\n[bold green]✅ All {total_tracks} songs successfully saved to:[/bold green] [yellow]{target_dir}[/yellow]")
     return target_dir, collection_title

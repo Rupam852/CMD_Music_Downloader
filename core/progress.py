@@ -36,3 +36,12 @@ class ClassicBoxBarColumn(ProgressColumn):
         bar_text.append("░" * empty, style="dim white")
         bar_text.append("]", style="bold cyan")
         return bar_text
+
+class SongCountColumn(ProgressColumn):
+    """
+    Displays (current/total Songs) for overall playlist tasks
+    """
+    def render(self, task):
+        total = int(task.total) if task.total else 0
+        completed = int(task.completed) if task.completed else 0
+        return Text(f"({completed}/{total} Songs Completed)", style="bold yellow")

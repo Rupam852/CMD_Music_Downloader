@@ -4,7 +4,15 @@ import sys
 from pathlib import Path
 import yt_dlp
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, DownloadColumn, TransferSpeedColumn, TimeRemainingColumn
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    DownloadColumn,
+    TransferSpeedColumn,
+    TimeRemainingColumn,
+    TaskProgressColumn
+)
 from core.config import DOWNLOADS_DIR, DEFAULT_AUDIO_FORMAT, DEFAULT_BITRATE
 from core.ffmpeg_helper import ensure_ffmpeg
 from core.progress import ClassicBoxBarColumn
@@ -29,7 +37,7 @@ def download_youtube(
     console: Console = None
 ) -> tuple[Path, str]:
     """
-    Downloads YouTube playlist or single track with classic box progress bar: [██████░░░░] 0% to 100%.
+    Downloads YouTube playlist or single track with individual per-song progress bars and overall playlist tracking.
     """
     if console is None:
         console = Console()
@@ -55,26 +63,27 @@ def download_youtube(
 
     is_playlist = 'entries' in info and info['entries'] is not None
     title = info.get('title') or "YouTube_Music"
-    clean_title = sanitize_filename(title)
+    clean_title = sanitize_filename(title) or "YouTube_Collection"
 
     base_output = Path(output_dir) if output_dir else DOWNLOADS_DIR
     target_dir = base_output / clean_title
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    entries_list = list(info['entries']) if is_playlist and info.get('entries') else [info]
+    if is_playlist and info.get('entries'):
+        entries_list = [e for e in info['entries'] if e]
+    else:
+        entries_list = [info]
+
     total_count = len(entries_list)
 
-    console.print(f"[bold green]🎵 Target: {clean_title} ({'Playlist - ' + str(total_count) + ' songs' if is_playlist else 'Single Song'})[/bold green]")
+    console.print(f"[bold green]🎵 Target: {clean_title} ({total_count} Songs Total)[/bold green]")
     console.print(f"[bold cyan]📁 Destination: {target_dir}[/bold cyan]\n")
 
-    outtmpl = str(target_dir / '%(title)s.%(ext)s')
-
-    # Setup Rich Progress Bars with Classic Box Progress Bar
     progress = Progress(
         SpinnerColumn(),
-        TextColumn("[bold yellow]{task.fields[title]}[/bold yellow]"),
+        TextColumn("[bold cyan]{task.description}[/bold cyan]"),
         ClassicBoxBarColumn(bar_width=25),
-        TextColumn("[bold green]{task.percentage:>3.0f}%[/bold green]"),
+        TaskProgressColumn(),
         TextColumn("•"),
         DownloadColumn(),
         TextColumn("•"),
@@ -85,70 +94,89 @@ def download_youtube(
     )
 
     with progress:
-        download_task = progress.add_task(
-            "download",
-            total=100,
-            completed=0,
-            title="Initializing download..."
+        # 1. Overall Playlist Progress Bar
+        overall_task = progress.add_task(
+            f"📦 Overall Playlist [{total_count} Songs]",
+            total=total_count,
+            completed=0
         )
 
-        current_item = {"index": 0, "title": ""}
+        for i, entry in enumerate(entries_list, 1):
+            entry_title = entry.get('title') or f"Track_{i}"
+            safe_name = sanitize_filename(entry_title)
+            output_file = target_dir / f"{safe_name}.{audio_format}"
+            short_name = (entry_title[:28] + "..") if len(entry_title) > 28 else entry_title
+            
+            entry_url = entry.get('url') or entry.get('webpage_url') or entry.get('id')
+            if not entry_url.startswith('http'):
+                entry_url = f"https://www.youtube.com/watch?v={entry_url}"
 
-        def yt_hook(d):
-            status = d.get('status')
-            if status == 'downloading':
-                filename = d.get('filename', '')
-                info_d = d.get('info_dict', {})
-                song_title = info_d.get('title') or Path(filename).stem
-                
-                disp_title = (song_title[:25] + "..") if len(song_title) > 25 else song_title
-                p_idx = d.get('playlist_index') or (current_item["index"] if current_item["index"] > 0 else 1)
-                p_tot = d.get('playlist_count') or total_count
+            if output_file.exists():
+                progress.advance(overall_task, 1)
+                console.print(f"[dim green]⏩ [{i}/{total_count}] Already exists: {safe_name}[/dim green]")
+                continue
 
-                total_bytes = d.get('total_bytes') or d.get('total_bytes_estimate') or 1
-                downloaded = d.get('downloaded_bytes') or 0
+            # 2. Individual Per-Song Separate Progress Bar
+            song_task = progress.add_task(
+                f"🎵 [{i}/{total_count}] {short_name}",
+                total=100,
+                completed=0
+            )
 
-                progress.update(
-                    download_task,
-                    total=total_bytes,
-                    completed=downloaded,
-                    title=f"[{p_idx}/{p_tot}] {disp_title}"
-                )
+            def yt_hook(d):
+                status = d.get('status')
+                if status == 'downloading':
+                    total_bytes = d.get('total_bytes') or d.get('total_bytes_estimate') or 1
+                    downloaded = d.get('downloaded_bytes') or 0
+                    progress.update(
+                        song_task,
+                        total=total_bytes,
+                        completed=downloaded,
+                        description=f"🎵 [{i}/{total_count}] {short_name}"
+                    )
+                elif status == 'finished':
+                    progress.update(
+                        song_task,
+                        description=f"🔄 [{i}/{total_count}] Converting & Embedding Artwork: {short_name}"
+                    )
 
-            elif status == 'finished':
-                filename = d.get('filename', '')
-                song_title = Path(filename).stem
-                progress.update(download_task, title=f"🔄 Processing: {song_title[:25]}")
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'outtmpl': str(target_dir / f"{safe_name}.%(ext)s"),
+                'ffmpeg_location': ffmpeg_dir or ffmpeg_path,
+                'writethumbnail': True,
+                'postprocessors': [
+                    {
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': audio_format,
+                        'preferredquality': bitrate,
+                    },
+                    {
+                        'key': 'EmbedThumbnail',
+                    },
+                    {
+                        'key': 'FFmpegMetadata',
+                        'add_metadata': True,
+                    }
+                ],
+                'quiet': True,
+                'no_warnings': True,
+                'ignoreerrors': True,
+                'progress_hooks': [yt_hook],
+            }
 
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': outtmpl,
-            'ffmpeg_location': ffmpeg_dir or ffmpeg_path,
-            'writethumbnail': True,
-            'postprocessors': [
-                {
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': audio_format,
-                    'preferredquality': bitrate,
-                },
-                {
-                    'key': 'EmbedThumbnail',
-                },
-                {
-                    'key': 'FFmpegMetadata',
-                    'add_metadata': True,
-                }
-            ],
-            'quiet': True,
-            'no_warnings': True,
-            'ignoreerrors': True,
-            'progress_hooks': [yt_hook],
-        }
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([entry_url])
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+                console.print(f"[bold green]✅ [{i}/{total_count}] Saved: {safe_name}[/bold green]")
+            except Exception as e:
+                console.print(f"[red]❌ [{i}/{total_count}] Error downloading {entry_title}: {e}[/red]")
+            finally:
+                progress.remove_task(song_task)
+                progress.advance(overall_task, 1)
 
-        progress.update(download_task, completed=100, total=100, title="[bold green]✅ Download Completed![/bold green]")
+        progress.update(overall_task, completed=total_count, description="[bold green]📦 All YouTube Songs Completed![/bold green]")
 
-    console.print(f"\n[bold green]✅ All songs successfully saved to:[/bold green] [yellow]{target_dir}[/yellow]")
+    console.print(f"\n[bold green]✅ All {total_count} songs successfully saved to:[/bold green] [yellow]{target_dir}[/yellow]")
     return target_dir, clean_title
