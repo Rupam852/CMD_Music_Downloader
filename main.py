@@ -134,7 +134,7 @@ def process_download(
         console.print(table)
         console.print("\n[bold green]✨ All done! Enjoy your high-quality music! 🎧[/bold green]\n")
 
-        if open_folder:
+        if open_folder and os.name == 'nt':
             target = zip_path if zip_path and zip_path.exists() else folder_path
             open_folder_in_explorer(target)
 
@@ -142,18 +142,20 @@ def process_download(
         console.print(f"\n[bold red]❌ Download encountered an error: {e}[/bold red]")
 
 def pick_folder_gui() -> str | None:
-    """Optional GUI folder picker using tkinter."""
+    """Optional GUI folder picker using tkinter on Windows."""
     try:
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
-        selected = filedialog.askdirectory(title="Select Destination Folder to Save Music & ZIP")
-        root.destroy()
-        return selected if selected else None
+        if os.name == 'nt':
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            selected = filedialog.askdirectory(title="Select Destination Folder to Save Music & ZIP")
+            root.destroy()
+            return selected if selected else None
     except Exception:
-        return None
+        pass
+    return None
 
 def interactive_mode():
     print_banner()
@@ -227,11 +229,19 @@ def interactive_mode():
     console.print("\n[bold cyan]───────────────── 📁 Step 5: Destination Folder ─────────────────[/bold cyan]")
     console.print(f"  [bold yellow]1.[/bold yellow] [bold white]Default Downloads Folder[/bold white] [dim]({DOWNLOADS_DIR})[/dim]")
     console.print("  [bold yellow]2.[/bold yellow] [bold white]Custom Path[/bold white] [dim](Type your own folder path)[/dim]")
-    console.print("  [bold yellow]3.[/bold yellow] [bold white]Browse Window[/bold white] [dim](Open Windows folder picker popup)[/dim]")
+    
+    is_win = (os.name == 'nt')
+    if is_win:
+        console.print("  [bold yellow]3.[/bold yellow] [bold white]Browse Window[/bold white] [dim](Open Windows folder picker popup)[/dim]")
+        dest_choices = ["1", "2", "3"]
+        dest_prompt = "[bold cyan]Select Destination (1-3)[/bold cyan]"
+    else:
+        dest_choices = ["1", "2"]
+        dest_prompt = "[bold cyan]Select Destination (1-2)[/bold cyan]"
 
     dest_choice = Prompt.ask(
-        "[bold cyan]Select Destination (1-3)[/bold cyan]",
-        choices=["1", "2", "3"],
+        dest_prompt,
+        choices=dest_choices,
         default="1",
         show_choices=False
     )
@@ -241,14 +251,17 @@ def interactive_mode():
     elif dest_choice == "2":
         custom_path = Prompt.ask("[bold yellow]Enter Custom Folder Path[/bold yellow]").strip()
         chosen_dir = Path(custom_path) if custom_path else DOWNLOADS_DIR
-    else: # "3"
+    else: # "3" (Windows only)
         console.print("[cyan]Opening folder picker window...[/cyan]")
         gui_folder = pick_folder_gui()
         chosen_dir = Path(gui_folder) if gui_folder else DOWNLOADS_DIR
 
-    # Step 6: Post-Download Action
-    console.print("\n[bold cyan]───────────────── 🚀 Step 6: Completion Action ─────────────────[/bold cyan]")
-    open_folder = Confirm.ask("[bold blue]📂 Open destination folder when download finishes?[/bold blue]", default=True)
+    # Step 6: Post-Download Action (Only on Windows GUI environments)
+    if is_win:
+        console.print("\n[bold cyan]───────────────── 🚀 Step 6: Completion Action ─────────────────[/bold cyan]")
+        open_folder = Confirm.ask("[bold blue]📂 Open destination folder when download finishes?[/bold blue]", default=True)
+    else:
+        open_folder = False
 
     process_download(
         url=url,

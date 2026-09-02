@@ -34,8 +34,16 @@ HEADERS = {
     'Accept-Language': 'en-US,en;q=0.9',
 }
 
+# Universal player clients to bypass YouTube bot detection & datacenter IP blocks (Cloud Shell / VPS)
+YOUTUBE_EXTRACTOR_ARGS = {
+    'youtube': {
+        'player_client': ['android', 'ios', 'web_embedded', 'tv'],
+        'player_skip': ['webpage', 'configs'],
+    }
+}
+
 def sanitize_filename(name: str) -> str:
-    """Sanitizes strings for Windows filesystem safety."""
+    """Sanitizes strings for Windows/Linux filesystem safety."""
     return re.sub(r'[\\/*?:"<>|]', "", name).strip()
 
 def parse_spotify_url(url: str) -> tuple[str, str] | tuple[None, None]:
@@ -239,6 +247,7 @@ def download_spotify(
                 'format': 'bestaudio/best',
                 'outtmpl': str(target_dir / f"{safe_name}.%(ext)s"),
                 'ffmpeg_location': ffmpeg_dir or ffmpeg_path,
+                'extractor_args': YOUTUBE_EXTRACTOR_ARGS,
                 'postprocessors': [
                     {
                         'key': 'FFmpegExtractAudio',
