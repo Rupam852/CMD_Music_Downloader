@@ -19,7 +19,7 @@ from rich.progress import (
 from core.config import DOWNLOADS_DIR, DEFAULT_AUDIO_FORMAT, DEFAULT_BITRATE
 from core.ffmpeg_helper import ensure_ffmpeg
 from core.tagger import embed_metadata
-from core.progress import ClassicBoxBarColumn, SongCountColumn
+from core.progress import ClassicBoxBarColumn
 
 # Ensure UTF-8 output encoding
 if sys.platform == "win32":
@@ -37,8 +37,11 @@ HEADERS = {
 # Universal player clients to bypass YouTube bot detection & datacenter IP blocks (Cloud Shell / VPS)
 YOUTUBE_EXTRACTOR_ARGS = {
     'youtube': {
-        'player_client': ['android', 'ios', 'web_embedded', 'tv'],
+        'player_client': ['ios', 'android', 'web_embedded', 'tv_embedded'],
         'player_skip': ['webpage', 'configs'],
+    },
+    'youtubetab': {
+        'skip': ['webpage'],
     }
 }
 
@@ -162,7 +165,7 @@ def download_spotify(
     console: Console = None
 ) -> tuple[Path, str]:
     """
-    Downloads Spotify tracks with individual per-song progress bars and an overall playlist progress bar.
+    Downloads Spotify tracks with clean, dedicated per-song progress bar.
     """
     if console is None:
         console = Console()
@@ -196,13 +199,6 @@ def download_spotify(
     )
 
     with progress:
-        # 1. Overall Playlist Progress Bar
-        overall_task = progress.add_task(
-            f"📦 Overall Playlist [{total_tracks} Songs]",
-            total=total_tracks,
-            completed=0
-        )
-
         for i, track in enumerate(tracks, 1):
             if track.get('artist'):
                 song_name = f"{track['artist']} - {track['title']}"
@@ -216,11 +212,10 @@ def download_spotify(
             short_name = (song_name[:28] + "..") if len(song_name) > 28 else song_name
 
             if output_file.exists():
-                progress.advance(overall_task, 1)
                 console.print(f"[dim green]⏩ [{i}/{total_tracks}] Already exists: {safe_name}[/dim green]")
                 continue
 
-            # 2. Individual Per-Song Separate Progress Bar
+            # Dedicated Single Per-Song Progress Bar
             song_task = progress.add_task(
                 f"🎵 [{i}/{total_tracks}] {short_name}",
                 total=100,
@@ -283,9 +278,6 @@ def download_spotify(
                 console.print(f"[red]❌ [{i}/{total_tracks}] Error downloading {song_name}: {e}[/red]")
             finally:
                 progress.remove_task(song_task)
-                progress.advance(overall_task, 1)
-
-        progress.update(overall_task, completed=total_tracks, description="[bold green]📦 All Spotify Songs Completed![/bold green]")
 
     console.print(f"\n[bold green]✅ All {total_tracks} songs successfully saved to:[/bold green] [yellow]{target_dir}[/yellow]")
     return target_dir, collection_title

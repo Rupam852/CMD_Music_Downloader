@@ -48,7 +48,7 @@ def download_youtube(
     console: Console = None
 ) -> tuple[Path, str]:
     """
-    Downloads YouTube playlist or single track with individual per-song progress bars and overall playlist tracking.
+    Downloads YouTube playlist or single track with clean, dedicated per-song progress bar.
     """
     if console is None:
         console = Console()
@@ -71,7 +71,6 @@ def download_youtube(
         try:
             info = ydl.extract_info(url, download=False)
         except Exception as e:
-            # Fallback if first attempt failed
             try:
                 extract_opts['extractor_args'] = {'youtube': {'player_client': ['android', 'web']}}
                 with yt_dlp.YoutubeDL(extract_opts) as ydl_fb:
@@ -113,13 +112,6 @@ def download_youtube(
     )
 
     with progress:
-        # 1. Overall Playlist Progress Bar
-        overall_task = progress.add_task(
-            f"📦 Overall Playlist [{total_count} Songs]",
-            total=total_count,
-            completed=0
-        )
-
         for i, entry in enumerate(entries_list, 1):
             entry_title = entry.get('title') or f"Track_{i}"
             safe_name = sanitize_filename(entry_title)
@@ -131,11 +123,10 @@ def download_youtube(
                 entry_url = f"https://www.youtube.com/watch?v={entry_url}"
 
             if output_file.exists():
-                progress.advance(overall_task, 1)
                 console.print(f"[dim green]⏩ [{i}/{total_count}] Already exists: {safe_name}[/dim green]")
                 continue
 
-            # 2. Individual Per-Song Separate Progress Bar
+            # Dedicated Single Per-Song Progress Bar
             song_task = progress.add_task(
                 f"🎵 [{i}/{total_count}] {short_name}",
                 total=100,
@@ -195,9 +186,6 @@ def download_youtube(
                 console.print(f"[red]❌ [{i}/{total_count}] Error downloading {entry_title}: {e}[/red]")
             finally:
                 progress.remove_task(song_task)
-                progress.advance(overall_task, 1)
-
-        progress.update(overall_task, completed=total_count, description="[bold green]📦 All YouTube Songs Completed![/bold green]")
 
     console.print(f"\n[bold green]✅ All {total_count} songs successfully saved to:[/bold green] [yellow]{target_dir}[/yellow]")
     return target_dir, clean_title
