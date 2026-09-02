@@ -12,10 +12,10 @@ A powerful **Interactive CMD CLI Terminal Tool** to download **YouTube & Spotify
 
 ---
 
-## 🌟 Features
+## 🌟 Key Features
 
-- 🎧 **Multi-Platform Support**: Download YouTube & Spotify playlists, albums, and single songs.
-- 🎚️ **Studio Quality Audio**: 320kbps, 256kbps, 192kbps, 128kbps in MP3, FLAC, WAV, or M4A.
+- 🎧 **Multi-Platform Support**: Download YouTube & Spotify playlists, albums, and single tracks.
+- 🎚️ **Studio Quality Audio**: 320kbps (Default / Highest MP3), 256kbps, 192kbps, 128kbps, or Lossless FLAC / WAV.
 - 🖼️ **Full ID3 Tagging**: Embeds high-resolution cover artwork, title, artist, album, and year tags automatically.
 - 📊 **Dual Progress Bars**: 
   - **Overall Playlist Bar**: Real-time total progress across the whole playlist.
@@ -28,15 +28,16 @@ A powerful **Interactive CMD CLI Terminal Tool** to download **YouTube & Spotify
 
 ---
 
-## ☁️ How to Run in Google Cloud Shell (CMD Terminal)
+## ☁️ Option 1: How to Run in Google Cloud Shell (Cloud Terminal)
 
-Google Cloud Shell me is tool ko direct command line me run karne ke liye yeh steps follow karein:
+Google Cloud Shell me run karne se aapko **1000+ Mbps Gigabit internet speed** milti hai jisse 100 gaano ki playlist sirf 1 minute me download ho jati hai!
 
-### Step 1: Open Google Cloud Shell
+### 📌 Step 1: Open Google Cloud Shell
 1. Apne browser me **[Google Cloud Shell](https://shell.cloud.google.com/)** open karein.
+2. Apne Google account se sign in karein.
 
-### Step 2: Clone & Setup
-Terminal me yeh commands run karein:
+### 📌 Step 2: Run Setup Commands
+Cloud Shell terminal me yeh commands paste karein:
 
 ```bash
 # 1. Clone repository & enter folder
@@ -50,35 +51,55 @@ sudo apt update && sudo apt install -y ffmpeg
 pip install -r requirements.txt
 ```
 
-### Step 3: Run Interactive Downloader
+### 📌 Step 3: Run Downloader
 ```bash
 python main.py
 ```
+* **Step 1**: Apna YouTube ya Spotify link paste karein.
+* **Step 2 to 6**: Direct **Enter** press karte jayein (Default 320kbps MP3 + ZIP select ho jayega).
 
-### ⚡ Direct Command-Line Arguments (Optional):
-Aap direct URL pass karke bhi download kar sakte hain:
+### 📥 Step 4: Download ZIP from Cloud Shell to Your PC / Mobile:
+Jab download complete ho jaye, toh Cloud Shell se `.zip` file apne computer/phone me download karne ke liye:
 ```bash
-# Example: Download Spotify Playlist in 320kbps MP3 as ZIP
-python main.py -u "https://open.spotify.com/playlist/YOUR_PLAYLIST_ID" -q 320 -f mp3 --mode zip
-
-# Example: Download YouTube Playlist
-python main.py -u "https://www.youtube.com/playlist?list=YOUR_PLAYLIST_ID" -q 320 -f mp3
+# Replace 'Your_Playlist_Name.zip' with your actual zip file name inside downloads/ folder:
+cloudshell download downloads/*.zip
 ```
+Ya phir Cloud Shell ke top-right corner me **Three Dots (⋮) -> "Download File"** par click karke path daalein:
+`CMD_Music_Downloader/downloads/Your_Playlist_Name.zip`
 
 ---
 
-## 💻 How to Run Locally on Windows
+## 💻 Option 2: How to Run on Your Computer (Windows PC)
 
-### Method 1: 1-Click Launcher (Easiest)
-Double-click [`run.bat`](run.bat) file.
+### 📌 Step 1: Download Project to Computer
+1. Is page ke top par green **"Code"** button par click karke **"Download ZIP"** karein, aur use extract karein.
+   * *Ya phir Git terminal me:* `git clone https://github.com/Rupam852/CMD_Music_Downloader.git`
 
-### Method 2: Command Prompt / PowerShell
+### 📌 Step 2: Python Setup (If not already installed)
+1. **[Python 3.10+](https://www.python.org/downloads/)** install karein.
+2. Install karte waqt **"Add python.exe to PATH"** checkbox ko zaroor tick karein!
+
+### 📌 Step 3: 1-Click Run
+1. Folder ke andar **[`run.bat`](run.bat)** file par double-click karein!
+   * Yeh automatically requirements install karega, portable FFmpeg setup karega aur downloader open kar dega!
+2. *Ya phir CMD / PowerShell me run karein:*
+   ```bash
+   pip install -r requirements.txt
+   python main.py
+   ```
+
+---
+
+## ⚡ Direct CLI Arguments (Advanced / Scripts):
+
+Aap bina interactive prompts ke direct single command se bhi download kar sakte hain:
+
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
+# Spotify Playlist in 320kbps MP3 as ZIP
+python main.py -u "https://open.spotify.com/playlist/YOUR_PLAYLIST_ID" -q 320 -f mp3 --mode zip
 
-# 2. Run
-python main.py
+# YouTube Playlist in Lossless FLAC
+python main.py -u "https://www.youtube.com/playlist?list=YOUR_PLAYLIST_ID" -q 320 -f flac --mode zip
 ```
 
 ---
@@ -88,8 +109,8 @@ python main.py
 ```
 CMD MUSIC DOWNLOADER/
 ├── core/
-│   ├── config.py             # Global paths and defaults
-│   ├── ffmpeg_helper.py      # Portable FFmpeg auto-downloader & checker
+│   ├── config.py             # Global paths and settings
+│   ├── ffmpeg_helper.py      # Portable FFmpeg auto-downloader & detector
 │   ├── progress.py           # Classic Box & Per-Song Progress Bars
 │   ├── spotify_downloader.py # Spotify metadata extractor & 320kbps engine
 │   ├── tagger.py             # ID3 tagger & album art embedder
@@ -98,7 +119,7 @@ CMD MUSIC DOWNLOADER/
 ├── main.py                   # Interactive CMD CLI Application
 ├── requirements.txt          # Python dependencies
 ├── run.bat                   # 1-Click Windows CMD Launcher
-└── README.md                 # Documentation & Guides
+└── README.md                 # Full Documentation & Guides
 ```
 
 ---
