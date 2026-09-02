@@ -134,6 +134,17 @@ def process_download(
         console.print(table)
         console.print("\n[bold green]✨ All done! Enjoy your high-quality music! 🎧[/bold green]\n")
 
+        if os.name != 'nt' and zip_path and zip_path.exists():
+            rel_path = os.path.relpath(zip_path, os.getcwd())
+            console.print(Panel(
+                f"[bold cyan]📥 Download this ZIP file to your Computer / Mobile:[/bold cyan]\n\n"
+                f"[bold yellow]cloudshell download {rel_path}[/bold yellow]\n\n"
+                f"[dim]Copy & run the command above in Cloud Shell terminal to save the file to your device![/dim]",
+                title="📦 Cloud Shell Download Command",
+                border_style="green",
+                padding=(1, 2)
+            ))
+
         if open_folder and os.name == 'nt':
             target = zip_path if zip_path and zip_path.exists() else folder_path
             open_folder_in_explorer(target)
